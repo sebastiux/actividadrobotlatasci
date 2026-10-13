@@ -6,6 +6,7 @@ import {
   policyMap, emptyQ, argmaxValid, greedyPolicy,
 } from './algorithms.js';
 import { lineChart, categoryMap, movingAverage } from './charts.js';
+import { initGame } from './game.js';
 
 // ---------------------------------------------------------------- utilidades
 const $ = (sel) => document.querySelector(sel);
@@ -548,9 +549,11 @@ function renderQuiz() {
 }
 
 // ---------------------------------------------------------------- orquestación
+let game = null;
 function onParamsChange() {
   store.set('aguila-params', P);
   OPT = optimal(P);
+  game?.onParamsChange();
   renderSummary();
   renderMdpTable();
   graphMain.update(P);
@@ -629,6 +632,7 @@ function init() {
   $('#simSpeed').addEventListener('change', () => { if (SIM.timer) { toggleSim(); toggleSim(); } });
 
   renderQuiz();
+  game = initGame({ getParams: () => P, getOptimal: () => OPT });
   onParamsChange();
   // Redibuja las gráficas al cambiar el ancho (son SVG con tamaño calculado)
   let lastW = innerWidth;

@@ -7,6 +7,7 @@ Sitio 100 % estático (HTML + CSS + JS modules, sin build) que explica e impleme
 
 | Sección | Contenido |
 |---|---|
+| 🎮 Modo partido | **Juego**: controlas al robot (flechas/WASD o tocando la cancha). Cada jugada de 5 s es un paso del MDP: la zona donde termina define la acción (cancha = buscar, banca = esperar, vestidor = recargar) y la batería cambia con α/β. Tus jugadas entrenan un Q-learning en vivo; asistente π* y modo IA |
 | Planteamiento | Ciclo agente–entorno, objetivo del agente |
 | MDP | Estados `S_H/S_L`, acciones buscar/esperar/recargar, tabla `p(s'|s,a)` y `r(s,a,s')`, grafo de transiciones en vivo |
 | Teoría | Retorno descontado, γ, `v_π`, `q_π`, ecuaciones de Bellman (expectativa y optimalidad) aplicadas al robot |
@@ -44,5 +45,6 @@ css/styles.css      # tema americanista (claro/oscuro)
 js/model.js         # dinámica del MDP
 js/algorithms.js    # DP, Monte Carlo, SARSA, Q-learning
 js/charts.js        # gráficas SVG sin dependencias
+js/game.js          # juego en canvas (control del robot)
 js/app.js           # interfaz
 ```

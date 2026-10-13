@@ -23,6 +23,7 @@
       <a class="brand" href="#inicio"><span class="brand-badge">🦅</span><span>Águila 5000</span></a>
       <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav">Menú</button>
       <nav id="mainNav" class="nav" aria-label="Secciones">
+        <a href="#juego" class="nav-play">🎮 Jugar</a>
         <a href="#problema">Planteamiento</a>
         <a href="#mdp">MDP</a>
         <a href="#teoria">Teoría</a>
@@ -80,8 +81,8 @@
             <strong>Proceso de Decisión de Markov finito</strong> y lo resolvemos con seis algoritmos de aprendizaje reforzado,
             paso a paso y con números reales.</p>
           <div class="hero-cta">
-            <a class="btn btn-gold" href="#problema">Arrancar el partido ⚽</a>
-            <a class="btn btn-outline-light" href="#simulador">Ir al simulador</a>
+            <a class="btn btn-gold" href="#juego">🎮 Jugar ahora</a>
+            <a class="btn btn-outline-light" href="#problema">Ver la teoría</a>
           </div>
           <p class="credit">Basado en el material de Dr. Alexandro López González y Mtro. Julio A. Caballero Mora (IBERO).</p>
         </div>
@@ -105,6 +106,72 @@
             <circle cx="62" cy="200" r="20" fill="#fff" stroke="#0a1e46" stroke-width="4"/>
             <path d="M62 188 l9 7 -3 10 h-12 l-3 -10z" fill="#0a1e46"/>
           </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- JUEGO -->
+    <section id="juego" class="section game-section">
+      <div class="wrap">
+        <p class="kicker">🎮 Modo partido</p>
+        <h2>Controla al Águila 5000</h2>
+        <p>Tú eres la política <span class="m">$\pi$</span>. Recoge balones durante 90 minutos (18 jugadas de 5 s) sin quedarte sin batería. Los puntos son exactamente las recompensas del MDP.
+          Al terminar cada jugada, <strong>la zona donde está el robot define la acción del MDP</strong>, y la batería cambia con las probabilidades
+          <span class="m">$\alpha$</span> y <span class="m">$\beta$</span> reales del modelo. Con batería baja el robot es más lento.</p>
+        <div class="game-grid">
+          <div class="game-main">
+            <div class="game-hud" aria-live="off">
+              <span class="hud-item">⏱ <b id="hMin">00'</b></span>
+              <span class="hud-item">Jugada <b id="hTurn">1/18</b></span>
+              <span class="hud-item">Puntos <b id="hScore">0.0</b></span>
+              <span class="hud-item">⚽ <b id="hBalls">0</b></span>
+              <span class="hud-item">🚑 <b id="hRescues">0</b></span>
+              <span class="hud-item batt-pill" id="hBattBox">🔋 <b id="hBatt">ALTA</b></span>
+              <span class="hud-turn"><i id="hBar"></i></span>
+              <span class="hud-item wide">Si la jugada termina aquí: <b id="hAction">⚽ buscar</b></span>
+              <span class="hud-item wide hint" id="hHintBox">Asistente π*: <b id="hHint">⚽ buscar</b></span>
+            </div>
+            <div class="game-frame">
+              <div id="gameOverlay" class="game-overlay" hidden></div>
+              <div id="gameCard" class="game-card" hidden></div>
+              <canvas id="gameCanvas" aria-label="Juego: cancha con el robot Águila 5000. Usa flechas o WASD, o mantén presionado sobre la cancha para moverlo."></canvas>
+            </div>
+            <div class="controls game-controls">
+              <button class="btn btn-gold" id="gamePlay">▶ Jugar</button>
+              <button class="btn btn-outline" id="gameReset">↺ Nuevo partido</button>
+              <button class="btn btn-outline" id="gameAuto">🤖 Que juegue la IA (π*)</button>
+              <label class="check-inline"><input type="checkbox" id="gameHint" checked> Asistente π*</label>
+              <span class="badge">Récord: <b id="gameBest">0</b></span>
+            </div>
+            <div class="game-legend">
+              <span><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> / <kbd>WASD</kbd> mover</span>
+              <span>👆 mantener presionado: ir hacia el dedo o mouse</span>
+              <span><kbd>Espacio</kbd> pausa</span>
+            </div>
+          </div>
+          <div class="game-side">
+            <div class="card">
+              <h3>Reglas = el MDP</h3>
+              <table class="tbl compact">
+                <thead><tr><th>Terminas la jugada en…</th><th>Acción</th></tr></thead>
+                <tbody>
+                  <tr><td>La cancha</td><td>⚽ buscar: +r<sub>s</sub> si recuperaste ≥ 1 balón; batería alta→baja con 1−α, baja→vacía con 1−β (🚑 −3)</td></tr>
+                  <tr><td>La banca</td><td>🪑 esperar: +r<sub>w</sub>, batería igual</td></tr>
+                  <tr><td>El vestidor</td><td>🔋 recargar (solo en baja): batería → alta, 0 puntos</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>Tus jugadas</h3>
+              <div class="table-scroll"><table class="tbl compact" id="gameLog"></table></div>
+            </div>
+            <div class="card">
+              <h3>Q-learning aprende de ti</h3>
+              <div class="table-scroll"><table class="tbl compact" id="gameQ"></table></div>
+              <p class="small muted" id="gameQNote"></p>
+              <button class="btn btn-small btn-ghost" id="gameForget">↺ Borrar lo aprendido</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
