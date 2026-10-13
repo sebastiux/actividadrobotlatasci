@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Águila 5000 · Aprendizaje reforzado americanista</title>
+  <meta name="description" content="Práctica de Aprendizaje Reforzado: el robot utilero Águila 5000 recoge balones en Coapa. MDP finito, ecuaciones de Bellman, iteración de valor y de política, Monte Carlo, SARSA y Q-learning, todo interactivo.">
+  <meta name="theme-color" content="#0a1e46">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <script defer src="vendor/katex/katex.min.js"></script>
+  <script defer src="vendor/katex/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#inicio"><span class="brand-badge">🦅</span><span>Águila 5000</span></a>
+      <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav">Menú</button>
+      <nav id="mainNav" class="nav" aria-label="Secciones">
+        <a href="#problema">Planteamiento</a>
+        <a href="#mdp">MDP</a>
+        <a href="#teoria">Teoría</a>
+        <a href="#evaluacion">Evaluación</a>
+        <a href="#valor">Iter. valor</a>
+        <a href="#politica">Iter. política</a>
+        <a href="#montecarlo">Monte Carlo</a>
+        <a href="#td">SARSA / Q</a>
+        <a href="#comparativa">Comparativa</a>
+        <a href="#simulador">Simulador</a>
+        <a href="#resumen">Resumen</a>
+      </nav>
+      <button class="theme-btn" id="themeBtn" aria-label="Cambiar tema claro/oscuro">◐</button>
+    </div>
+    <div class="params-bar">
+      <div class="params-bar-inner">
+        <span class="pb-title">Parámetros del partido:</span>
+        <span id="paramsSummary" class="pb-values"></span>
+        <button class="btn btn-small" id="openParams">⚙ Ajustar</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Vestidor de parámetros (drawer) -->
+  <aside id="paramsDrawer" class="drawer" aria-hidden="true" aria-labelledby="drawerTitle">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">⚙ Vestidor táctico</h2>
+      <button class="btn btn-ghost" id="closeParams" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="muted small">Todo el sitio (tablas, grafo, algoritmos y simulador) se recalcula en vivo con estos valores.</p>
+    <div class="sliders" id="sliders"></div>
+    <div class="drawer-actions">
+      <button class="btn" id="resetParams">Restaurar valores de la práctica</button>
+    </div>
+    <div class="presets">
+      <p class="small"><strong>Escenarios rápidos</strong></p>
+      <button class="btn btn-small btn-outline" data-preset="clasico">Clásico (default)</button>
+      <button class="btn btn-small btn-outline" data-preset="bateria">Batería de alto rendimiento</button>
+      <button class="btn btn-small btn-outline" data-preset="miope">Técnico miope (γ = 0.3)</button>
+      <button class="btn btn-small btn-outline" data-preset="banca">Banca generosa (r<sub>w</sub> alto)</button>
+      <button class="btn btn-small btn-outline" data-preset="camilla">Rescate barato (−0.5)</button>
+    </div>
+  </aside>
+  <div id="drawerScrim" class="scrim" hidden></div>
+
+  <main id="contenido">
+    <!-- HERO -->
+    <section id="inicio" class="hero">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <p class="eyebrow">Aprendizaje reforzado · Ejemplos de MDPs</p>
+          <h1>ÁGUILA 5000<span>el robot utilero de Coapa</span></h1>
+          <p class="lead">Adaptación americanista de la práctica <em>Can Finder 5000</em>: un robot que, en lugar de latas,
+            recoge <strong>balones</strong> en la cancha de entrenamiento del Club América. Con él construimos un
+            <strong>Proceso de Decisión de Markov finito</strong> y lo resolvemos con seis algoritmos de aprendizaje reforzado,
+            paso a paso y con números reales.</p>
+          <div class="hero-cta">
+            <a class="btn btn-gold" href="#problema">Arrancar el partido ⚽</a>
+            <a class="btn btn-outline-light" href="#simulador">Ir al simulador</a>
+          </div>
+          <p class="credit">Basado en el material de Dr. Alexandro López González y Mtro. Julio A. Caballero Mora (IBERO).</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <svg viewBox="0 0 260 260" class="robot">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#f2a900"/></linearGradient>
+            </defs>
+            <circle cx="130" cy="130" r="124" fill="#0e2a5c" stroke="#ffd23f" stroke-width="6"/>
+            <rect x="74" y="66" width="112" height="84" rx="18" fill="url(#g1)" stroke="#0a1e46" stroke-width="5"/>
+            <circle cx="106" cy="104" r="14" fill="#fff" stroke="#0a1e46" stroke-width="4"/>
+            <circle cx="154" cy="104" r="14" fill="#fff" stroke="#0a1e46" stroke-width="4"/>
+            <circle cx="108" cy="106" r="6" fill="#0a1e46"/>
+            <circle cx="156" cy="106" r="6" fill="#0a1e46"/>
+            <path d="M118 128 L130 142 L142 128 Z" fill="#d6332a" stroke="#0a1e46" stroke-width="3"/>
+            <path d="M92 66 L104 44 L114 66 M146 66 L156 44 L168 66" fill="#ffd23f" stroke="#0a1e46" stroke-width="4"/>
+            <rect x="88" y="152" width="84" height="54" rx="10" fill="#e9edf5" stroke="#0a1e46" stroke-width="5"/>
+            <text x="130" y="186" text-anchor="middle" font-family="Bebas Neue, sans-serif" font-size="26" fill="#0a1e46">5000</text>
+            <rect x="188" y="150" width="22" height="40" rx="4" fill="#1baf7a" stroke="#0a1e46" stroke-width="4"/>
+            <rect x="194" y="144" width="10" height="6" fill="#0a1e46"/>
+            <circle cx="62" cy="200" r="20" fill="#fff" stroke="#0a1e46" stroke-width="4"/>
+            <path d="M62 188 l9 7 -3 10 h-12 l-3 -10z" fill="#0a1e46"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. PLANTEAMIENTO -->
+    <section id="problema" class="section">
+      <div class="wrap">
+        <p class="kicker">1 · Planteamiento</p>
+        <h2>El problema: recoger balones sin quedarse tirado en la cancha</h2>
+        <div class="grid-2">
+          <div>
+            <p>Terminó el entrenamiento en Coapa y quedan balones regados por toda la cancha. El <strong>Águila 5000</strong>
+              —el robot utilero del primer equipo— debe recuperarlos. Cada decisión que toma cambia su nivel de batería
+              y, con ello, lo que podrá hacer después: es un problema de <strong>toma de decisiones secuencial</strong>.</p>
+            <p>Este ejemplo ilustra cómo formular ese tipo de problema como un <strong>Proceso de Decisión de Markov (MDP) finito</strong>:
+              un conjunto finito de estados, un conjunto finito de acciones y una dinámica probabilística
+              <span class="m">$p(s', r \mid s, a)$</span> que cumple la <em>propiedad de Markov</em> (el futuro solo depende del estado actual, no de la historia).</p>
+            <div class="callout gold">
+              <strong>Objetivo del agente (robot):</strong> maximizar la cantidad de balones recuperados a largo plazo,
+              evitando quedarse sin batería lejos del vestidor (y que el cuerpo técnico tenga que ir por él en el carrito).
+            </div>
+          </div>
+          <div class="card loop-card">
+            <h3>El ciclo agente–entorno</h3>
+            <svg viewBox="0 0 360 220" class="loop-svg" role="img" aria-label="Ciclo agente-entorno: el agente observa el estado, elige acción, recibe recompensa y nuevo estado">
+              <defs><marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+              <rect x="110" y="10" width="140" height="56" rx="12" class="loop-box agent"/>
+              <text x="180" y="35" text-anchor="middle" class="loop-t on-gold">Agente 🦅🤖</text>
+              <text x="180" y="54" text-anchor="middle" class="loop-s on-gold">política π(a|s)</text>
+              <rect x="110" y="150" width="140" height="56" rx="12" class="loop-box env"/>
+              <text x="180" y="175" text-anchor="middle" class="loop-t on-navy">Entorno ⚽🏟️</text>
+              <text x="180" y="194" text-anchor="middle" class="loop-s on-navy">cancha + batería</text>
+              <path d="M250 38 C 330 38 330 178 254 178" class="loop-path" marker-end="url(#arrL)"/>
+              <text x="332" y="112" class="loop-s" text-anchor="end">acción Aₜ</text>
+              <path d="M110 170 C 40 170 40 50 106 44" class="loop-path" marker-end="url(#arrL)"/>
+              <path d="M110 190 C 14 190 14 30 106 26" class="loop-path dim" marker-end="url(#arrL)"/>
+              <text x="62" y="100" class="loop-s">Sₜ₊₁</text>
+              <text x="4" y="124" class="loop-s">Rₜ₊₁</text>
+            </svg>
+            <p class="small muted">En cada paso <span class="m">$t$</span> el robot observa su batería <span class="m">$S_t$</span>, elige una acción <span class="m">$A_t$</span>,
+              recibe una recompensa <span class="m">$R_{t+1}$</span> y pasa a <span class="m">$S_{t+1}$</span>. La trayectoria es
+              <span class="m">$S_0, A_0, R_1, S_1, A_1, R_2, \dots$</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. MDP -->
+    <section id="mdp" class="section alt">
+      <div class="wrap">
+        <p class="kicker">2 · La pizarra del MDP</p>
+        <h2>Componentes clave: estados, acciones, recompensas y dinámica</h2>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>Estados <span class="m">$\mathcal{S}$</span></h3>
+            <p>Definidos solo por la carga de la batería (dos estados):</p>
+            <ul class="clean">
+              <li><span class="pill pill-hi">S<sub>H</sub></span> Batería <strong>alta</strong> (High)</li>
+              <li><span class="pill pill-lo">S<sub>L</sub></span> Batería <strong>baja</strong> (Low)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Acciones <span class="m">$\mathcal{A}(s)$</span></h3>
+            <ul class="clean">
+              <li><span class="act act-0">⚽ a<sub>s</sub></span> <strong>Buscar</strong> balones por la cancha. <span class="m">$r_s &gt; 0$</span></li>
+              <li><span class="act act-1">🪑 a<sub>w</sub></span> <strong>Esperar</strong> junto a la banca a que se los devuelvan. <span class="m">$0 \le r_w &lt; r_s$</span></li>
+              <li><span class="act act-2">🔋 a<sub>r</sub></span> <strong>Recargar</strong> en el vestidor. Recompensa 0 y regresa a <span class="m">$S_H$</span>. Solo disponible en <span class="m">$S_L$</span>.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Recompensas <span class="m">$R$</span></h3>
+            <table class="tbl compact">
+              <thead><tr><th>Acción</th><th>Recompensa esperada</th></tr></thead>
+              <tbody>
+                <tr><td>Buscar (a<sub>s</sub>)</td><td><span class="m">$R(s,a_s)=r_s$</span></td></tr>
+                <tr><td>Esperar (a<sub>w</sub>)</td><td><span class="m">$R(s,a_w)=r_w$</span></td></tr>
+                <tr><td>Recargar (a<sub>r</sub>)</td><td><span class="m">$R(s,a_r)=0$</span></td></tr>
+              </tbody>
+            </table>
+            <p class="small">Cada balón recuperado vale +1; quedarse sin batería y ser rescatado cuesta <strong>−3</strong>.
+              La mejor forma de conseguir balones es buscarlos… pero eso agota la batería.</p>
+          </div>
+        </div>
+
+        <h3 class="mt">La dinámica (planteamiento)</h3>
+        <div class="grid-2">
+          <div class="card">
+            <div class="batt-row">
+              <div class="batt hi" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <div>
+                <p><strong>Buscar con batería alta:</strong> al terminar el recorrido la batería sigue alta con probabilidad
+                  <span class="m">$\alpha$</span> y baja a <em>baja</em> con probabilidad <span class="m">$1-\alpha$</span>.</p>
+                <p class="small muted">Ahora mismo: <span data-bind="alpha"></span> se queda alta · <span data-bind="1-alpha"></span> baja.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="batt-row">
+              <div class="batt lo" aria-hidden="true"><i></i></div>
+              <div>
+                <p><strong>Buscar con batería baja:</strong> sigue en baja con probabilidad <span class="m">$\beta$</span> y se
+                  <strong>vacía</strong> con probabilidad <span class="m">$1-\beta$</span>. Si se vacía, hay que rescatarlo:
+                  vuelve a <em>alta</em> pero con recompensa <strong>−3</strong>.</p>
+                <p class="small muted">Ahora mismo: <span data-bind="beta"></span> sigue baja · <span data-bind="1-beta"></span> se vacía (camilla 🚑).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout navy">
+          <strong>El dilema.</strong> Con batería <em>alta</em>, ¿debe buscar o esperar? Con batería <em>baja</em>, ¿buscar, esperar o recargar?
+          El MDP busca la <strong>política</strong> <span class="m">$\pi(s)$</span> que maximice el <strong>retorno descontado</strong> de recompensas.
+        </div>
+
+        <div class="grid-2 mt">
+          <div>
+            <h3>Tabla del MDP <span class="m">$p(s' \mid s,a)$</span> y <span class="m">$r(s,a,s')$</span></h3>
+            <p class="small muted">Con <span class="m">$r_{buscar} &gt; r_{esperar}$</span>. Los valores se actualizan con los parámetros.</p>
+            <div class="table-scroll"><table class="tbl" id="mdpTable"></table></div>
+          </div>
+          <div>
+            <h3>Grafo de transiciones</h3>
+            <p class="small muted">Círculos grandes = estados; puntos = acciones; cada flecha lleva <span class="m">$(p, r)$</span>.</p>
+            <div id="graphMain" class="graph"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. TEORIA -->
+    <section id="teoria" class="section">
+      <div class="wrap">
+        <p class="kicker">3 · Teoría táctica</p>
+        <h2>Lo que necesitas para entender los algoritmos</h2>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Retorno y descuento <span class="m">$\gamma$</span></h3>
+            <p>La tarea es <em>continua</em> (el robot trabaja indefinidamente), así que sumamos recompensas futuras con un factor de descuento <span class="m">$0 \le \gamma &lt; 1$</span>:</p>
+            <p class="m-block">$$G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \dots = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} = R_{t+1} + \gamma G_{t+1}$$</p>
+            <p><span class="m">$\gamma$</span> es la <strong>visión de juego</strong> del técnico: con <span class="m">$\gamma \approx 0$</span> solo le importa el balón de ahora (miope);
+              con <span class="m">$\gamma \to 1$</span> planea toda la temporada. El horizonte efectivo es ≈ <span class="m">$1/(1-\gamma)$</span> pasos.</p>
+            <div class="gamma-demo">
+              <div id="gammaBars" class="gamma-bars" aria-label="Pesos γ^k de las recompensas futuras"></div>
+              <p class="small muted">Peso <span class="m">$\gamma^k$</span> que recibe la recompensa de dentro de <span class="m">$k$</span> pasos con el <span class="m">$\gamma$</span> actual (horizonte ≈ <strong id="horizon"></strong> pasos).</p>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Política y funciones de valor</h3>
+            <p>Una <strong>política</strong> <span class="m">$\pi(a\mid s)$</span> es el planteamiento táctico: qué hacer en cada estado.</p>
+            <p class="m-block">$$v_\pi(s) = \mathbb{E}_\pi\left[G_t \mid S_t = s\right] \qquad q_\pi(s,a) = \mathbb{E}_\pi\left[G_t \mid S_t=s, A_t=a\right]$$</p>
+            <ul>
+              <li><span class="m">$v_\pi(s)$</span>: cuánto vale <em>estar</em> en <span class="m">$s$</span> si sigo jugando con <span class="m">$\pi$</span>.</li>
+              <li><span class="m">$q_\pi(s,a)$</span>: cuánto vale hacer <span class="m">$a$</span> en <span class="m">$s$</span> y después seguir con <span class="m">$\pi$</span>.</li>
+              <li>Relación: <span class="m">$v_\pi(s)=\sum_a \pi(a\mid s)\,q_\pi(s,a)$</span> y <span class="m">$q_\pi(s,a)=\sum_{s',r}p(s',r\mid s,a)\,[r+\gamma v_\pi(s')]$</span>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-2 mt">
+          <div class="card">
+            <h3>Ecuación de Bellman de expectativa</h3>
+            <p>El valor de un estado = recompensa inmediata esperada + valor descontado de a dónde llego:</p>
+            <p class="m-block">$$v_\pi(s) = \sum_a \pi(a\mid s) \sum_{s',r} p(s',r\mid s,a)\,\big[r + \gamma\, v_\pi(s')\big]$$</p>
+            <p>Para nuestro robot, por ejemplo, si en <span class="m">$S_H$</span> la política es <em>buscar</em>:</p>
+            <p class="m-block">$$v_\pi(H) = \alpha\,[r_s + \gamma v_\pi(H)] + (1-\alpha)\,[r_s + \gamma v_\pi(L)]$$</p>
+            <p class="small">Es un sistema <strong>lineal</strong>: con 2 estados se resuelve exacto como <span class="m">$V = (I-\gamma P_\pi)^{-1} R_\pi$</span>.</p>
+          </div>
+          <div class="card">
+            <h3>Ecuación de Bellman de optimalidad</h3>
+            <p>La política óptima elige siempre la mejor acción:</p>
+            <p class="m-block">$$v_*(s) = \max_a \sum_{s',r} p(s',r\mid s,a)\,\big[r + \gamma\, v_*(s')\big]$$</p>
+            <p>En nuestro MDP, explícitamente:</p>
+            <p class="m-block">$$\begin{aligned}
+              v_*(H) &= \max\begin{cases} r_s + \gamma[\alpha v_*(H) + (1-\alpha) v_*(L)] & \text{buscar}\\ r_w + \gamma v_*(H) & \text{esperar}\end{cases}\\
+              v_*(L) &= \max\begin{cases} \beta r_s - 3(1-\beta) + \gamma[(1-\beta) v_*(H) + \beta v_*(L)] & \text{buscar}\\ r_w + \gamma v_*(L) & \text{esperar}\\ \gamma v_*(H) & \text{recargar}\end{cases}
+            \end{aligned}$$</p>
+            <p class="small">El <span class="m">$\max$</span> la vuelve <strong>no lineal</strong>: por eso usamos métodos iterativos.</p>
+          </div>
+        </div>
+
+        <h3 class="mt">El mapa de los algoritmos</h3>
+        <div class="table-scroll">
+          <table class="tbl algo-map">
+            <thead><tr><th>Familia</th><th>¿Necesita el modelo <span class="m">$p(s',r\mid s,a)$</span>?</th><th>¿Cómo estima?</th><th>Algoritmos en esta práctica</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Programación dinámica</strong></td><td>Sí (conoce α, β y las recompensas)</td><td><em>Bootstrapping</em> con expectativas completas sobre todos los <span class="m">$s'$</span></td><td><a href="#evaluacion">Evaluación de política</a>, <a href="#valor">Iteración de valor</a>, <a href="#politica">Iteración de política</a></td></tr>
+              <tr><td><strong>Monte Carlo</strong></td><td>No, aprende de episodios</td><td>Promedia retornos completos <span class="m">$G_t$</span> observados (sin bootstrapping)</td><td><a href="#montecarlo">MC de control ε-greedy</a></td></tr>
+              <tr><td><strong>Diferencias temporales (TD)</strong></td><td>No, aprende paso a paso</td><td>Bootstrapping con una muestra: <span class="m">$r + \gamma Q(s',\cdot)$</span></td><td><a href="#td">SARSA (on-policy), Q-learning (off-policy)</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2 mt">
+          <div class="callout gold">
+            <strong>Exploración vs. explotación.</strong> Un agente que no conoce el modelo debe probar acciones para aprender
+            (explorar) pero también aprovechar lo que ya sabe (explotar). La política <strong>ε-greedy</strong> elige la mejor acción conocida
+            con probabilidad <span class="m">$1-\varepsilon$</span> y una al azar con probabilidad <span class="m">$\varepsilon$</span>: como meter de cambio a un canterano de vez en cuando para ver qué tal juega.
+          </div>
+          <div class="callout navy">
+            <strong>Notación.</strong> En la práctica, <span class="m">$\alpha$</span> y <span class="m">$\beta$</span> son <em>probabilidades del entorno</em>.
+            Para no confundir, aquí la <strong>tasa de aprendizaje</strong> de los métodos sin modelo se llama <span class="m">$\eta$</span>
+            (en muchos libros también se escribe <span class="m">$\alpha$</span>).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. EVALUACION DE POLITICA -->
+    <section id="evaluacion" class="section alt">
+      <div class="wrap">
+        <p class="kicker">4 · Programación dinámica</p>
+        <h2>Evaluación de política: ¿cuánto vale mi planteamiento?</h2>
+        <p>Dada una política fija <span class="m">$\pi$</span>, aplicamos repetidamente la ecuación de Bellman de expectativa como regla de actualización:
+          <span class="m">$V_{k+1}(s) \leftarrow \sum_a \pi(a\mid s)\sum_{s',r}p(s',r\mid s,a)[r+\gamma V_k(s')]$</span>.
+          Partiendo de <span class="m">$V_0 = 0$</span>, la secuencia converge a <span class="m">$v_\pi$</span> porque el operador de Bellman es una <em>contracción</em> de factor <span class="m">$\gamma$</span>.</p>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Elige el planteamiento</h3>
+            <div class="form-row">
+              <label for="evalH">Con batería alta (S<sub>H</sub>)</label>
+              <select id="evalH"><option value="0">⚽ Buscar</option><option value="1">🪑 Esperar</option></select>
+            </div>
+            <div class="form-row">
+              <label for="evalL">Con batería baja (S<sub>L</sub>)</label>
+              <select id="evalL"><option value="0">⚽ Buscar</option><option value="1">🪑 Esperar</option><option value="2" selected>🔋 Recargar</option></select>
+            </div>
+            <div id="evalExact" class="eval-exact"></div>
+          </div>
+          <div class="card">
+            <h3>Convergencia de <span class="m">$V_k$</span></h3>
+            <div id="evalChart"></div>
+            <p class="small muted" id="evalNote"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ITERACION DE VALOR -->
+    <section id="valor" class="section">
+      <div class="wrap">
+        <p class="kicker">5 · Programación dinámica</p>
+        <h2>Iteración de valor: Bellman de optimalidad, barrido a barrido</h2>
+        <p>Combina evaluación y mejora en una sola actualización:
+          <span class="m">$V_{k+1}(s) \leftarrow \max_a \sum_{s',r}p(s',r\mid s,a)[r+\gamma V_k(s')]$</span>.
+          Se detiene cuando <span class="m">$\Delta = \max_s |V_{k+1}(s)-V_k(s)| &lt; \theta$</span> y la política óptima se lee como
+          <span class="m">$\pi_*(s)=\arg\max_a Q(s,a)$</span>.</p>
+
+        <div class="algo-box">
+          <pre class="pseudo"><b>Iteración de valor</b>
+Inicializar V(s) = 0 para todo s
+repetir
+    Δ ← 0
+    para cada s ∈ {alto, bajo}:
+        v ← V(s)
+        V(s) ← max_a Σ p(s'|s,a) [ r + γ V(s') ]
+        Δ ← max(Δ, |v − V(s)|)
+hasta que Δ &lt; θ
+π(s) ← argmax_a Σ p(s'|s,a) [ r + γ V(s') ]</pre>
+        </div>
+
+        <div class="controls">
+          <button class="btn" id="viStep">▶ Siguiente barrido</button>
+          <button class="btn btn-outline" id="viRun">⏩ Hasta converger</button>
+          <button class="btn btn-ghost" id="viReset">↺ Reiniciar</button>
+          <span class="badge" id="viBadge"></span>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Cuentas del barrido <span id="viK"></span></h3>
+            <div id="viDetail" class="backup"></div>
+          </div>
+          <div class="card">
+            <h3>Valores por iteración</h3>
+            <div id="viChart"></div>
+            <div class="table-scroll"><table class="tbl compact" id="viTable"></table></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. ITERACION DE POLITICA -->
+    <section id="politica" class="section alt">
+      <div class="wrap">
+        <p class="kicker">6 · Programación dinámica</p>
+        <h2>Iteración de política: evaluar → mejorar → repetir</h2>
+        <p>Alterna dos fases: <strong>evaluación</strong> (calcular <span class="m">$v_\pi$</span> de la política actual) y <strong>mejora</strong>
+          (<span class="m">$\pi'(s)=\arg\max_a q_\pi(s,a)$</span>). El <em>teorema de mejora de política</em> garantiza que <span class="m">$v_{\pi'} \ge v_\pi$</span>;
+          como hay un número finito de políticas (aquí <span class="m">$2 \times 3 = 6$</span>), termina en pocas iteraciones.</p>
+        <div class="controls">
+          <label for="piInitH">Política inicial: alto =</label>
+          <select id="piInitH"><option value="0">Buscar</option><option value="1" selected>Esperar</option></select>
+          <label for="piInitL">bajo =</label>
+          <select id="piInitL"><option value="0">Buscar</option><option value="1" selected>Esperar</option><option value="2">Recargar</option></select>
+        </div>
+        <div id="piSteps" class="pi-steps"></div>
+        <div class="card mt">
+          <h3>Las 6 políticas deterministas, evaluadas exactamente</h3>
+          <p class="small muted">Comparar todas solo es posible porque el MDP es pequeño; en problemas reales el número de políticas es <span class="m">$|\mathcal{A}|^{|\mathcal{S}|}$</span> y explota.</p>
+          <div class="table-scroll"><table class="tbl" id="allPolicies"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6b. MAPA -->
+    <section id="mapa" class="section">
+      <div class="wrap">
+        <p class="kicker">6b · Análisis de sensibilidad</p>
+        <h2>¿Cuándo conviene cada jugada? Mapa de la política óptima</h2>
+        <p>Resolvemos el MDP con iteración de valor en cada punto de una rejilla de parámetros. El círculo marca tus parámetros actuales.
+          Pasa el cursor sobre una celda para ver los valores.</p>
+        <div class="controls">
+          <label for="mapAxes">Ejes:</label>
+          <select id="mapAxes">
+            <option value="ab">α (x) contra β (y)</option>
+            <option value="bw" selected>β (x) contra r_w / r_s (y)</option>
+            <option value="bg">β (x) contra γ (y)</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="card"><h3>Batería alta (S<sub>H</sub>)</h3><div id="mapH"></div></div>
+          <div class="card"><h3>Batería baja (S<sub>L</sub>)</h3><div id="mapL"></div></div>
+        </div>
+        <p class="small muted" id="mapNote"></p>
+      </div>
+    </section>
+
+    <!-- 7. MONTE CARLO -->
+    <section id="montecarlo" class="section alt">
+      <div class="wrap">
+        <p class="kicker">7 · Sin modelo</p>
+        <h2>Monte Carlo: aprender jugando partidos completos</h2>
+        <div class="grid-2">
+          <div>
+            <p>Ahora el robot <strong>no conoce</strong> α ni β. Juega una sesión completa (episodio) con una política ε-greedy,
+              anota lo que pasó y al final calcula el retorno real de cada paso, de atrás hacia adelante:
+              <span class="m">$G_t = R_{t+1} + \gamma G_{t+1}$</span>. Luego promedia esos retornos:</p>
+            <p class="m-block">$$Q(s,a) \leftarrow Q(s,a) + \frac{1}{N(s,a)}\big[G_t - Q(s,a)\big]$$</p>
+            <ul>
+              <li><strong>Sin sesgo</strong>: usa retornos reales, no estimaciones.</li>
+              <li><strong>Alta varianza</strong>: un rescate (−3) puede mover mucho un retorno.</li>
+              <li>Debe <strong>esperar al final</strong> del episodio para actualizar.</li>
+              <li>Como la tarea es continua, cada episodio es una sesión de <span class="m">$T$</span> pasos y solo se usan los retornos de la primera mitad (para que el truncamiento no los sesgue).</li>
+            </ul>
+          </div>
+          <div class="algo-box">
+            <pre class="pseudo"><b>Monte Carlo de control (primera visita, ε-greedy)</b>
+Q(s,a) ← 0, N(s,a) ← 0
+para cada episodio:
+    generar S0,A0,R1,…,S_T siguiendo ε-greedy(Q)
+    G ← 0
+    para t = T−1 … 0:
+        G ← R_{t+1} + γ G
+        si (S_t, A_t) es primera visita:
+            N(S_t,A_t) ← N + 1
+            Q(S_t,A_t) ← Q + (G − Q) / N
+    reducir ε</pre>
+          </div>
+        </div>
+        <div class="card mt">
+          <h3>Un episodio de muestra y sus retornos</h3>
+          <div class="controls"><button class="btn btn-small" id="mcSample">🎲 Generar otro episodio (12 pasos)</button></div>
+          <div class="table-scroll"><table class="tbl compact" id="mcEpisode"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. TD -->
+    <section id="td" class="section">
+      <div class="wrap">
+        <p class="kicker">8 · Sin modelo</p>
+        <h2>Diferencias temporales: SARSA y Q-learning</h2>
+        <p>Los métodos TD no esperan al final del partido: actualizan <strong>después de cada jugada</strong> usando su propia estimación del futuro (<em>bootstrapping</em>).
+          La diferencia clave está en el <strong>objetivo</strong> (target):</p>
+        <div class="grid-2">
+          <div class="card">
+            <h3>SARSA <span class="tag">on-policy</span></h3>
+            <p class="m-block">$$Q(S,A) \leftarrow Q(S,A) + \eta\big[R + \gamma\,Q(S',A') - Q(S,A)\big]$$</p>
+            <p>Usa la acción <span class="m">$A'$</span> que <em>realmente</em> tomará la política ε-greedy. Aprende el valor de la política que juega,
+              exploración incluida: tiende a ser más <strong>conservador</strong> (sabe que a veces hará una jugada al azar).</p>
+            <p class="small muted">Nombre: <strong>S</strong>, <strong>A</strong>, <strong>R</strong>, <strong>S'</strong>, <strong>A'</strong>.</p>
+          </div>
+          <div class="card">
+            <h3>Q-learning <span class="tag">off-policy</span></h3>
+            <p class="m-block">$$Q(S,A) \leftarrow Q(S,A) + \eta\big[R + \gamma\,\max_{a'} Q(S',a') - Q(S,A)\big]$$</p>
+            <p>Usa la <em>mejor</em> acción siguiente aunque no sea la que tome. Aprende directamente <span class="m">$q_*$</span> mientras explora con otra política:
+              es el más <strong>agresivo</strong> y el más usado (base de DQN).</p>
+            <p class="small muted">El término <span class="m">$\delta = R + \gamma(\cdot) - Q(S,A)$</span> se llama <strong>error TD</strong>.</p>
+          </div>
+        </div>
+
+        <div class="card mt">
+          <h3>Una actualización, con lupa</h3>
+          <p class="small muted">Se toma una transición real del entorno y se calcula el nuevo valor con ambos métodos a partir de la misma tabla Q.</p>
+          <div class="controls">
+            <label for="tdEta">η</label><input type="number" id="tdEta" value="0.5" min="0.01" max="1" step="0.05">
+            <button class="btn btn-small" id="tdStep">▶ Siguiente transición</button>
+            <button class="btn btn-small btn-ghost" id="tdReset">↺ Q = 0</button>
+          </div>
+          <div class="grid-2">
+            <div id="tdExplain" class="backup"></div>
+            <div>
+              <div class="table-scroll"><table class="tbl compact" id="tdQ"></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. COMPARATIVA -->
+    <section id="comparativa" class="section alt">
+      <div class="wrap">
+        <p class="kicker">9 · El clásico de los algoritmos</p>
+        <h2>Comparativa: Monte Carlo vs SARSA vs Q-learning</h2>
+        <p>Los tres aprenden con exactamente las mismas condiciones (misma semilla, mismos episodios). Comparamos dos cosas:
+          la <strong>recompensa promedio por paso</strong> durante el aprendizaje (qué tan bien juega mientras aprende) y el
+          <strong>error</strong> <span class="m">$\text{RMSE}(Q, q_*)$</span> contra la solución exacta de programación dinámica (qué tan bien aprendió).</p>
+        <div class="card">
+          <div class="hyper">
+            <div class="form-row"><label for="hEpisodes">Episodios</label><input type="number" id="hEpisodes" value="400" min="20" max="3000" step="20"></div>
+            <div class="form-row"><label for="hT">Pasos por episodio T</label><input type="number" id="hT" value="60" min="10" max="300" step="10"></div>
+            <div class="form-row"><label for="hEta">Tasa de aprendizaje η</label><input type="number" id="hEta" value="0.1" min="0.005" max="1" step="0.005"></div>
+            <div class="form-row"><label for="hEps">Exploración ε inicial</label><input type="number" id="hEps" value="0.2" min="0" max="1" step="0.05"></div>
+            <div class="form-row check"><label><input type="checkbox" id="hDecay" checked> ε decreciente</label></div>
+            <div class="form-row"><label for="hSeed">Semilla</label><input type="number" id="hSeed" value="7" min="1" max="99999"></div>
+            <div class="form-row"><button class="btn btn-gold" id="runCompare">🏁 Entrenar</button></div>
+          </div>
+        </div>
+        <div class="grid-2 mt">
+          <div class="card"><h3>Recompensa promedio por paso <small>(media móvil 20 ep.)</small></h3><div id="cmpReward"></div></div>
+          <div class="card"><h3>Error contra <span class="m">$q_*$</span> (RMSE)</h3><div id="cmpError"></div></div>
+        </div>
+        <div class="card mt">
+          <h3>Tablas Q aprendidas vs. óptima</h3>
+          <div class="table-scroll"><table class="tbl" id="cmpTable"></table></div>
+          <p class="small muted" id="cmpNote"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. SIMULADOR -->
+    <section id="simulador" class="section">
+      <div class="wrap">
+        <p class="kicker">10 · A la cancha</p>
+        <h2>Simulador: mira jugar al Águila 5000</h2>
+        <p>Elige un planteamiento y observa cada decisión sobre el grafo de transiciones. El marcador lleva balones, rescates y el retorno descontado.</p>
+        <div class="controls">
+          <label for="simPolicy">Planteamiento</label>
+          <select id="simPolicy">
+            <option value="opt">π* óptima (programación dinámica)</option>
+            <option value="greedy">Siempre buscar (ultraofensivo)</option>
+            <option value="safe">Esperar siempre (catenaccio)</option>
+            <option value="random">Al azar</option>
+            <option value="ql">Aprendida por Q-learning (comparativa)</option>
+          </select>
+          <label for="simSpeed">Velocidad</label>
+          <input type="range" id="simSpeed" min="60" max="1200" value="500" step="20" aria-label="Velocidad">
+          <button class="btn" id="simPlay">▶ Jugar</button>
+          <button class="btn btn-outline" id="simStep">⏭ Un paso</button>
+          <button class="btn btn-ghost" id="simReset">↺ Reiniciar</button>
+        </div>
+        <div class="sim-grid">
+          <div class="card">
+            <div id="graphSim" class="graph"></div>
+          </div>
+          <div class="card scoreboard">
+            <div class="sb-head">MARCADOR · COAPA</div>
+            <div class="sb-row"><span>Minuto (paso)</span><b id="sbT">0</b></div>
+            <div class="sb-row"><span>Batería</span><b id="sbS">alta</b></div>
+            <div class="sb-row"><span>Balones ⚽</span><b id="sbBalls">0</b></div>
+            <div class="sb-row"><span>Rescates 🚑</span><b id="sbRescues">0</b></div>
+            <div class="sb-row"><span>Recompensa total</span><b id="sbTotal">0</b></div>
+            <div class="sb-row"><span>Retorno descontado G₀</span><b id="sbG">0</b></div>
+            <div class="sb-row"><span>Promedio por paso</span><b id="sbAvg">0</b></div>
+            <div class="sb-comment" id="sbComment">El silbatazo inicial está por sonar…</div>
+          </div>
+        </div>
+        <div class="card mt">
+          <h3>Bitácora</h3>
+          <div class="table-scroll log"><table class="tbl compact" id="simLog"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. RESUMEN -->
+    <section id="resumen" class="section alt">
+      <div class="wrap">
+        <p class="kicker">11 · Conferencia de prensa</p>
+        <h2>Resumen de los algoritmos</h2>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead><tr><th>Algoritmo</th><th>Modelo</th><th>Regla de actualización</th><th>Bootstrapping</th><th>On/Off-policy</th><th>Cuándo usarlo</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Evaluación de política</strong></td><td>Sí</td><td><span class="m">$V(s)\leftarrow\sum_a\pi\sum p[r+\gamma V(s')]$</span></td><td>Sí</td><td>—</td><td>Medir qué tan buena es una política dada</td></tr>
+              <tr><td><strong>Iteración de valor</strong></td><td>Sí</td><td><span class="m">$V(s)\leftarrow\max_a\sum p[r+\gamma V(s')]$</span></td><td>Sí</td><td>—</td><td>Resolver un MDP conocido; simple y robusto</td></tr>
+              <tr><td><strong>Iteración de política</strong></td><td>Sí</td><td>Evaluar <span class="m">$v_\pi$</span> + <span class="m">$\pi\leftarrow\text{greedy}(q_\pi)$</span></td><td>Sí</td><td>—</td><td>MDP conocido; muy pocas iteraciones externas</td></tr>
+              <tr><td><strong>Monte Carlo</strong></td><td>No</td><td><span class="m">$Q\leftarrow Q+\tfrac1N(G-Q)$</span></td><td>No</td><td>On (ε-greedy)</td><td>Tareas episódicas; cuando no quieres sesgo</td></tr>
+              <tr><td><strong>SARSA</strong></td><td>No</td><td><span class="m">$Q\leftarrow Q+\eta[r+\gamma Q(s',a')-Q]$</span></td><td>Sí</td><td>On</td><td>Aprender seguro mientras exploras (castigos fuertes)</td></tr>
+              <tr><td><strong>Q-learning</strong></td><td>No</td><td><span class="m">$Q\leftarrow Q+\eta[r+\gamma\max Q(s',\cdot)-Q]$</span></td><td>Sí</td><td>Off</td><td>Aprender directamente la política óptima</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2 mt">
+          <div class="card">
+            <h3>Conclusiones para el Águila 5000</h3>
+            <ul id="conclusions"></ul>
+          </div>
+          <div class="card">
+            <h3>Autoevaluación ⚽</h3>
+            <div id="quiz"></div>
+          </div>
+        </div>
+
+        <div class="card mt">
+          <h3>Glosario rápido</h3>
+          <dl class="glossary">
+            <dt>MDP finito</dt><dd>Tupla <span class="m">$(\mathcal{S},\mathcal{A},p,r,\gamma)$</span> con estados y acciones finitos y propiedad de Markov.</dd>
+            <dt>Política <span class="m">$\pi$</span></dt><dd>Regla que asigna acciones (o probabilidades de acciones) a cada estado.</dd>
+            <dt>Retorno <span class="m">$G_t$</span></dt><dd>Suma descontada de recompensas futuras.</dd>
+            <dt>Bootstrapping</dt><dd>Actualizar una estimación usando otras estimaciones (como hacen DP y TD).</dd>
+            <dt>Error TD <span class="m">$\delta$</span></dt><dd>Diferencia entre el objetivo <span class="m">$r+\gamma(\cdot)$</span> y la estimación actual.</dd>
+            <dt>ε-greedy</dt><dd>Explota con probabilidad <span class="m">$1-\varepsilon$</span>, explora al azar con probabilidad <span class="m">$\varepsilon$</span>.</dd>
+            <dt>Contracción</dt><dd>Propiedad del operador de Bellman que garantiza convergencia a un único punto fijo cuando <span class="m">$\gamma&lt;1$</span>.</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p><strong>Águila 5000</strong> · Práctica de Aprendizaje Reforzado — Ejemplos de MDPs. Adaptación temática americanista con fines educativos;
+        sin afiliación oficial con ningún club.</p>
+      <p class="small">Material base: Dr. Alexandro López González y Mtro. Julio A. Caballero Mora, Universidad Iberoamericana. Referencia: Sutton &amp; Barto, <em>Reinforcement Learning: An Introduction</em> (2ª ed.), ej. 3.3 “Recycling Robot”.</p>
+      <p class="small">¡Vámonos América! 🦅💛💙</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
