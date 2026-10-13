@@ -2,7 +2,7 @@
 // Basados en modelo (programación dinámica): evaluación de política, iteración de valor,
 // iteración de política. Sin modelo: Monte Carlo, SARSA y Q-learning.
 
-import { actionsFor, qFromV, step, mulberry32, expectedReward, transitions } from './model.js';
+import { actionsFor, qFromV, step, mulberry32, expectedReward, transitions } from './model.js?v=__V__';
 
 const NS = 2;
 

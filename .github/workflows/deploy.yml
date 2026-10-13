@@ -29,6 +29,8 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html css js vendor .nojekyll _site/
+          # Versiona CSS/JS con el commit para que el navegador no use archivos viejos en caché
+          sed -i "s/__V__/${GITHUB_SHA::8}/g" _site/index.html _site/js/*.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

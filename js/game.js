@@ -2,8 +2,8 @@
 // Cada "jugada" es un paso del MDP: la zona donde termina el robot define la acción
 // (cancha = buscar, banca = esperar, vestidor = recargar) y la batería transiciona con α / β.
 
-import { ACTIONS, ACTION_EMOJI, transitions, actionsFor } from './model.js';
-import { emptyQ, argmaxValid, greedyPolicy } from './algorithms.js';
+import { ACTIONS, ACTION_EMOJI, transitions, actionsFor } from './model.js?v=__V__';
+import { emptyQ, argmaxValid, greedyPolicy } from './algorithms.js?v=__V__';
 
 const W = 960, H = 540;
 const TURN_SECONDS = 5;

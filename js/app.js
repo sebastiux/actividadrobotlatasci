@@ -1,12 +1,12 @@
 import {
   DEFAULTS, ACTIONS, ACTION_LABELS, ACTION_EMOJI, STATES, actionsFor, transitions, qFromV, expectedReward, step, mulberry32,
-} from './model.js';
+} from './model.js?v=__V__';
 import {
   valueIteration, policyIteration, policyEvaluation, evaluatePolicyExact, optimal, monteCarlo, sarsa, qLearning,
   policyMap, emptyQ, argmaxValid, greedyPolicy,
-} from './algorithms.js';
-import { lineChart, categoryMap, movingAverage } from './charts.js';
-import { initGame } from './game.js';
+} from './algorithms.js?v=__V__';
+import { lineChart, categoryMap, movingAverage } from './charts.js?v=__V__';
+import { initGame } from './game.js?v=__V__';
 
 // ---------------------------------------------------------------- utilidades
 const $ = (sel) => document.querySelector(sel);
