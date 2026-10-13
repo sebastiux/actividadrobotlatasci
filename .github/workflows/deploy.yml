@@ -23,9 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configurar Pages
+        # Requiere una sola vez: Settings → Pages → Source: GitHub Actions
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Empaquetar sitio estático
         run: |
           mkdir -p _site
